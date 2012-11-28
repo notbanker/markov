@@ -21,7 +21,10 @@ for k=1:nFunc,
     fn = function_names{k};
     [In{k},Out{k},Removed{k}] = determineInOutRemoved(fn,ds);
     for m=1:length(Out{k}),
-        dsMin.(Out{k}{m}) = [];
+        vn = Out{k}{m};
+        if ismember(vn,dsMin.Properties.VarNames),
+            dsMin.(Out{k}{m}) = [];
+        end
     end
 end
 G = zeros(nFunc);
@@ -35,9 +38,11 @@ end
 end
 
 function [inFields,outFields,removedFields] = determineInOutRemoved(f,ds)
-  missing = missing_field_name(f,ds);
-  if ~isempty(missing),
-      error(['You need to add the field ',missing,' to ds before topology can be determined']);
+  missing = firstMissingVar(f,ds);
+  while ~isempty(missing),
+      disp(['Inspecting ',f,'. Adding the field ',missing,' filled with NaNs so topology can be determined']);
+      ds.(missing) = nan(size(ds,1),1);
+      missing = firstMissingVar(f,ds);
   end
   dsMinimal = removeUnusedInputFields(f,ds);
   dsOut = feval(f,dsMinimal);
@@ -65,7 +70,7 @@ end
 end
 
 
-function fn = missing_field_name(f,ds)
+function fn = firstMissingVar(f,ds)
 % Find the first missing variable name that is required to apply f to ds
  fn = '';
  try

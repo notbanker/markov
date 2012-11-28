@@ -26,8 +26,8 @@ function [dsOut,ds] = parfor_dataset_immutable(function_names,ds,I)
 
 % Use a small sample to determine topological ordering and minimal input arguments
 dsTest = ds(I==1,:);
-if size(dsTest,1)>1000,
-   dsTest = dsTest(1:1000,:); 
+if size(dsTest,1)>50,
+   dsTest = dsTest(1:50,:); 
 end
 [G,dsMin] = dataset_dependency_dag(function_names,dsTest);
 seq = toposort(G');
@@ -37,6 +37,14 @@ fns = ds.Properties.VarNames;
 for k=1:length(fns),
    if ~ismember(fns{k},dsMin.Properties.VarNames),
       ds.(fns{k}) = []; 
+   end
+end
+
+% Warn if we need to add more variables
+fns = ds.Properties.VarNames;
+for k=1:length(fns),
+   if all(isnan(dsMin.(fns{k}))),
+      error(['Please add the field ',fns{k},' to the dataset']);    
    end
 end
 
