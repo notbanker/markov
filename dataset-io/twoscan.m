@@ -1,5 +1,5 @@
 function ds = twoscan(filename,varargin)
-% ds = TWOSCAN(FILENAME,DELIMITER,CONVERTTODATENUM,MAXLINES)
+% DS = TWOSCAN(FILENAME) reads a dataset from a
 %
 % Read dataset from delimited file with two line header. The first
 % line is the variable name. The second is the type, belonging to 
