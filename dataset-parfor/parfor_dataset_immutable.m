@@ -6,7 +6,7 @@ function [dsOut,ds] = parfor_dataset_immutable(function_names,ds,I)
 % dsIn and then sequentially applies the operators, not necessarily in the
 % supplied order but rather in a topological ordering as determined by the
 % needs of the operators (some operators require input fields that are an
-% output of a previous operation). 
+% output of a previous operation, and this defines the topological ordering). 
 % 
 % Operations are parallelized on row groups. It is assumed that the calculation
 % can be partition using a row group assignment given by I. The vector I is a
@@ -23,6 +23,9 @@ function [dsOut,ds] = parfor_dataset_immutable(function_names,ds,I)
 %
 % See also parfor_dataset_sequential
 
+if ischar(function_names),
+    function_names = {function_names}; 
+end
 
 % Use a small sample to determine topological ordering and minimal input arguments
 dsTest = ds(I==1,:);
@@ -43,7 +46,7 @@ end
 % Warn if we need to add more variables
 fns = ds.Properties.VarNames;
 for k=1:length(fns),
-   if all(isnan(dsMin.(fns{k}))),
+   if all(666666==dsMin.(fns{k})),
       error(['Please add the field ',fns{k},' to the dataset']);    
    end
 end

@@ -1,4 +1,4 @@
-function [G,dsMin,In,Out,Removed] = dataset_dependency_dag(function_names,ds)
+function [G,dsMin,In,New,Removed] = dataset_dependency_dag(function_names,ds)
 % G = DATASET_DEPENDENCY_DAG(FUNCTION_NAMES,DS) returns an adacency matrix
 % G where G(i,j)==1 if the j'th function needs to be computed before the i'th
 % function, either because the i'th function requires a field that is an output
@@ -14,16 +14,16 @@ function [G,dsMin,In,Out,Removed] = dataset_dependency_dag(function_names,ds)
 
 nFunc = length(function_names);
 In = cell(nFunc,1);
-Out = cell(nFunc,1);
+New = cell(nFunc,1);
 Removed = cell(nFunc,1);
 dsMin = ds;
 for k=1:nFunc,
     fn = function_names{k};
-    [In{k},Out{k},Removed{k}] = determineInOutRemoved(fn,ds);
-    for m=1:length(Out{k}),
-        vn = Out{k}{m};
+    [In{k},New{k},Removed{k}] = determineInOutRemoved(fn,ds);
+    for m=1:length(New{k}),
+        vn = New{k}{m};
         if ismember(vn,dsMin.Properties.VarNames),
-            dsMin.(Out{k}{m}) = [];
+            dsMin.(New{k}{m}) = [];
         end
     end
 end
@@ -31,7 +31,7 @@ G = zeros(nFunc);
 for i=1:nFunc,
     for j=1:nFunc
         if j~=i,
-            G(i,j) = any(ismember(Out{j},In{i})) | any(ismember(Removed{i},Out{j})) | any(ismember(Removed{i},In{j}));
+            G(i,j) = any(ismember(New{j},In{i})) | any(ismember(Removed{i},New{j})) | any(ismember(Removed{i},In{j}));
         end
     end
 end
@@ -40,8 +40,8 @@ end
 function [inFields,outFields,removedFields] = determineInOutRemoved(f,ds)
   missing = firstMissingVar(f,ds);
   while ~isempty(missing),
-      disp(['Inspecting ',f,'. Adding the field ',missing,' filled with NaNs so topology can be determined']);
-      ds.(missing) = nan(size(ds,1),1);
+      disp(['Inspecting ',f,'. Adding the field ',missing,' filled with 666666 so topology can be determined']);
+      ds.(missing) = 6666666*ones(size(ds,1),1);
       missing = firstMissingVar(f,ds);
   end
   dsMinimal = removeUnusedInputFields(f,ds);
