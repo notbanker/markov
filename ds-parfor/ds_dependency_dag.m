@@ -1,5 +1,5 @@
-function [G,dsMin,In,New,Removed] = dataset_dependency_dag(function_names,ds)
-% G = DATASET_DEPENDENCY_DAG(FUNCTION_NAMES,DS) returns an adacency matrix
+function [G,dsMin,In,New,Removed] = ds_dependency_dag(function_names,ds)
+% G = DS_DEPENDENCY_DAG(FUNCTION_NAMES,DS) returns an adacency matrix
 % G where G(i,j)==1 if the j'th function needs to be computed before the i'th
 % function, either because the i'th function requires a field that is an output
 % of the j'th function; or because the j'th function removes a field that is an 
@@ -22,7 +22,7 @@ for k=1:nFunc,
     [In{k},New{k},Removed{k}] = determineInOutRemoved(fn,ds);
     for m=1:length(New{k}),
         vn = New{k}{m};
-        if ismember(vn,dsMin.Properties.VarNames),
+        if ismember(vn,dsNames(dsMin)),
             dsMin.(New{k}{m}) = [];
         end
     end
@@ -46,22 +46,22 @@ function [inFields,outFields,removedFields] = determineInOutRemoved(f,ds)
   end
   dsMinimal = removeUnusedInputFields(f,ds);
   dsOut = feval(f,dsMinimal);
-  inFields = dsMinimal.Properties.VarNames;
-  outFields = setdiff(dsOut.Properties.VarNames,dsMinimal.Properties.VarNames);
-  removedFields = setdiff(dsMinimal.Properties.VarNames,dsOut.Properties.VarNames);
+  inFields = dsNames(dsMinimal);
+  outFields = setdiff(dsNames(dsOut),dsNames(dsMinimal));
+  removedFields = setdiff(dsNames(dsMinimal),dsNames(dsOut));
 end
 
 
 function dsMinimal = removeUnusedInputFields(f,ds)
 dsMinimal = ds;
-allArgs = ds.Properties.VarNames;
+allArgs = dsNames(ds);
 nArgs = length(allArgs);
 for m=1:nArgs,
     ds_without_fn = ds;
     fn = allArgs{m};
     ds_without_fn.(fn)=[];
     try
-        dont_care_right_now = feval(f,ds_without_fn);
+        throw_me_away = feval(f,ds_without_fn);
         dsMinimal.(fn) = [];
     catch ME
         % Leave the field in
@@ -77,7 +77,11 @@ function fn = firstMissingVar(f,ds)
     feval(f,ds);
  catch ME
     msg = ME.message;
-    pat = 'Unrecognized variable name ''([\w\d]+)';
+    if isa(ds,'dataset'),
+        pat = 'Unrecognized variable name ''([\w\d]+)';
+    else
+        pat = 'Reference to non-existent field ''([\w\d]+)';
+    end
     [~,~,~,~,token] = regexp(msg, pat);
     fn = token{1}{1};
  end

@@ -3,110 +3,27 @@ classdef obsLagged
     % Creation of lagged variables by groups
     
     properties(Constant)
-       trainingWheelsOn = false; % <--- Set to false to speed up 
-    end
-      
-    methods (Static) % Wrappers that facilitate dataset utilities for lagged values, etc cetera 
-         
-        function [laggedDx,I] = dsLaggedDifferences(X,lags,ds,varargin)
-            vars = cell(length(varargin),1);
-            [vars{:}] = obsLagged.deal(ds,varargin{:});
-            [laggedDx,I] = obsLagged.laggedDifferences(X,lags,vars{:});
-        end
-        
-        function [laggedX,I] = dsLaggedValues(X,lags,ds,varargin)
-            % Create a matrix of lagged values after grouping
-            if isempty(X),
-               error('X is empty'); 
-            end
-            vars = cell(length(varargin),1);
-            [vars{:}] = obsLagged.deal(ds,varargin{:});
-            [laggedX,I] = obsLagged.laggedValues(X,lags,vars{:});
-        end
-        
-        function [laggedX,I] = dsLeadingValues(X,lags,ds,varargin)
-            % Create a matrix of leading values after grouping
-            if isempty(X),
-               error('X is empty'); 
-            end
-            vars = cell(length(varargin),1);
-            [vars{:}] = obsLagged.deal(ds,varargin{:});
-            [laggedX,I] = obsLagged.leadingValues(X,lags,vars{:});
-        end
-        
-        function X = dealDouble(ds,varargin)
-            fns = fieldnames(ds);
-            [~,obsLoc] = ismember(varargin(:),fns);
-            if all(obsLoc>0),
-                n = length(varargin);
-                X = zeros(size(ds,1),n);
-                fat = false;
-                for k=1:n,
-                    x_ = ds.(fns{obsLoc(k)});
-                    if size(x_,2)>1,
-                        fat = true;
-                        X = X(:,1:n-1);
-                    end
-                    if fat,
-                        X = [X,x_];
-                    else
-                        X(:,k) = x_;
-                    end
-                end
-            else
-                warning(['Invalid field name requested ']);
-                f = find(obsLoc<1);
-                varargin{f(:)},
-                error('Given up');
-            end
-            
-        end
-        
-        function varargout = deal(ds,varargin)
-            % Deal out dataset fields into stand alone variables
-            fns = fieldnames(ds);
-            [~,obsLoc] = ismember(varargin(:),fns);
-            if all(obsLoc>0),
-                n = length(varargin);
-                varargout = cell(n,1);
-                for k=1:n,
-                    varargout{k} = ds.(fns{obsLoc(k)});
-                end
-            else
-                warning(['Invalid field name(s) requested']);
-                f = find(obsLoc<1);
-                varargin{f(:)},
-                error('giving up');
-            end
-        end
-        
-        function key = dsCreateKey(ds,varargin)
-            % Create unique contiguous key given field names
-            vars = cell(length(varargin),1);
-            [vars{:}] = obsLagged.deal(ds,varargin{:});
-            key = obsLagged.createKey(vars{:});
-        end
-        
+       trainingWheelsOn = false;  
     end
     
-    methods (Static) % Stand alone version of 'table' manipulation functions operating on variables
+    methods (Static) % 'Table' manipulation functions operating on variables
         
         function avgX = groupAverage(X,varargin)
             f = @(x) nanmean(x);
-            avgX = obsLagged.groupfun(X,f,varargin{:});
+            avgX = obsLagged.groupFun(X,f,varargin{:});
         end
         
         function avgX = groupCount(X,varargin)
             f = @(x) sum(~isnan(x));
-            avgX = obsLagged.groupfun(X,f,varargin{:});
+            avgX = obsLagged.groupFun(X,f,varargin{:});
         end
         
         function avgX = groupSum(X,varargin)
             f = @(x) nansum(x);
-            avgX = obsLagged.groupfun(X,f,varargin{:});
+            avgX = obsLagged.groupFun(X,f,varargin{:});
         end
         
-        function fX = groupfun(X,f,varargin)
+        function fX = groupFun(X,f,varargin)
             % Apply function to all subgroups as defined by varargin
             % The function f should take vectors to scalars or vectors to a vector of the same length
             keys_ = obsLagged.createKey(varargin{:});
@@ -160,67 +77,6 @@ classdef obsLagged
             allLaggedDy = -diff([X,laggedY],1,2);
             laggedDy = allLaggedDy(:,lags);
         end
-
-        function [cautiousY,I] = cautiousValuesOfAnother(X,lags,f,varargin)
-            % Create a matrix of lagged values after grouping, but reporting the "cautious" value
-            % of choice(j) rather than the lagged value of j
-            mL = max(lags)+2;
-            [Z,I] = obsLagged.laggedValuesOfAnother(X,(1:mL),f,varargin{:});
-            cautiousY = obsLagged.beCautious(Z);
-            if 1,
-               % Check that we move less
-               distX = sum(abs(diff(X,1,2)),2);
-               distY = sum(abs(diff(cautiousY,1,2)),2);
-               if any(distX<distY)
-                   disp('huh?');
-                   f = find(distX<distY);
-                   egX = X(f,:),
-                   egY = cautiousY(f,:),
-               end
-            end
-        end
-        
-        function [cautiousY,I] = veryCautiousValuesOfAnother(X,lags,f,varargin)
-            % Create a matrix of lagged values after grouping, but reporting the "cautious" value
-            % of choice(j) rather than the lagged value of j
-            mL = max(lags)+3;
-            [Z,I] = obsLagged.laggedValuesOfAnother(X,(1:mL),f,varargin{:});
-            cautiousY = obsLagged.beVeryCautious(Z);
-            if 1,
-               % Check that we move less
-               distX = sum(abs(diff(X,1,2)),2);
-               distY = sum(abs(diff(cautiousY,1,2)),2);
-               if any(distX<distY)
-                   disp('huh?');
-                   f = find(distX<distY);
-                   egX = X(f,:),
-                   egY = cautiousY(f,:),
-               end
-            end
-        end
-        
-        
-        function y = beCautious(z)
-            yLag2  = z(:,3:end);
-            yLag1  = z(:,2:end-1);
-            yLag0  = z(:,1:end-2);  
-            y = yLag1;
-            isSwitchBack = (yLag1-yLag2).*(yLag0-yLag1)<0;
-            y(isSwitchBack) = yLag2(isSwitchBack);
-        end
-        
-        function y = beVeryCautious(z)
-            yLag3 =  z(:,4:end);
-            yLag2  = z(:,3:end-1);
-            yLag1  = z(:,2:end-2);
-            yLag0  = z(:,1:end-3);  
-            y = yLag2;
-            movingUp =  yLag1>yLag2 & yLag0>yLag2;
-            movingDown =  yLag1<yLag2 & yLag0<yLag2;
-            y(movingUp) = min(yLag1(movingUp),yLag2(movingUp));
-            y(movingDown) = max(yLag1(movingDown),yLag2(movingDown));
-        end
-        
         
         function [laggedY,I] = laggedValuesOfAnother(X,lags,f,varargin)
             % Create a matrix of lagged values after grouping, but reporting the lagged value
@@ -230,8 +86,6 @@ classdef obsLagged
             laggedY = nan(size(X,1),length(lags));
             laggedY(~isnan(I)) = X(I(~isnan(I)));
         end
-        
-        
         
         function [leadingY,I] = leadingValuesOfAnother(X,lags,f,varargin)
             % Create a matrix of leading values after grouping, but reporting the leading value
@@ -244,8 +98,6 @@ classdef obsLagged
             leadingY = nan(size(Xr,1),length(lags));
             leadingY(~isnan(I)) = Xr(I(~isnan(I)));
         end
-        
-        
         
         function I = nextOccurances(key,leads,varargin)
            n = size(key,1);
@@ -349,20 +201,6 @@ classdef obsLagged
 %                 disp(['boo lags=' num2str(lags)]); 
 %                 error('stopping for debug'); 
 %             end
-        end
-        
-    end
-    
-    methods (Static) % Row selection
-        
-        function dsNew = selectRows(ds,I)
-            dsNew = dataset;
-            vNames = ds.Properties.VarNames;
-            for k=1:length(vNames),
-                vName = vNames{k};
-                dsVName = ds.(vName);
-                dsNew.(vName) = dsVName(I);
-            end
         end
         
     end
@@ -615,29 +453,6 @@ classdef obsLagged
             end
         end
             
-        function unitTest_dsLaggedValues
-            ds = obsLagged.dsExample2(50);
-            [prevTemperatureOnSameDayOfWeekWithSameWeather,prevOcc] = obsLagged.dsLaggedValues(ds.temperature,1:3,ds,'rain','dayOfWeek');
-            if 1, % display lagged values
-               [ds.rain,ds.dayOfWeek, ds.temperature,prevTemperatureOnSameDayOfWeekWithSameWeather], 
-            end
-        end
-        
-        function unitTest_dsLeadingValues
-            ds = obsLagged.dsExample2(50);
-            [nextTemperatureOnSameDayOfWeekWithSameWeather,nextOcc] = obsLagged.dsLeadingValues(ds.temperature,1:3,ds,'rain','dayOfWeek');
-            if 1, % display lagged values
-               [ds.rain,ds.dayOfWeek, ds.temperature,nextTemperatureOnSameDayOfWeekWithSameWeather], 
-            end
-        end
-        
-        function unitTest_dsLaggedDifferences
-            ds = obsLagged.dsExample2(50);
-            [prevTemperatureDiffOnSameDayOfWeekWithSameWeather,prevOcc] = obsLagged.dsLaggedDifferences(ds.temperature,1:3,ds,'rain','dayOfWeek');
-            if 1, % display lagged values
-               [ds.rain,ds.dayOfWeek, ds.temperature,prevTemperatureDiffOnSameDayOfWeekWithSameWeather], 
-            end
-        end
         
         function unitTest_createKeyChoice
             ds = obsLagged.dsExample2(7);

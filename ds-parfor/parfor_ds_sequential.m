@@ -1,5 +1,5 @@
-function ds = parfor_dataset_sequential(function_names,ds,I,immutable)
-% DS = PARFOR_DATASET_SEQUENTIAL(FUNCTION_NAMES,DS,I) sequentially applies a list
+function ds = parfor_ds_sequential(function_names,ds,I,immutable)
+% DS = PARFOR_DS_SEQUENTIAL(FUNCTION_NAMES,DS,I) sequentially applies a list
 % of functions to a dataset ds, but parallelizes the operations into groups
 % of rows.  
 % 
@@ -8,14 +8,14 @@ function ds = parfor_dataset_sequential(function_names,ds,I,immutable)
 %
 % It is assumed that the calculation can be partition using a row group
 % assignment given by I. The vector I is a list of integers with the same
-% length as size(ds,1). 
+% length as dsSize(ds,1). 
 %
 % An easy way to create the partition is calling I = equalPartition(nGroups,J1,J2,...) 
 % This will divide the rows into roughly equal sized groups in such a way
 % that all rows in a group take the same values for J1, J2. In particular
 % the J1, J2, ... might be fields of ds taking discrete values. 
 %
-% DS = PARFOR_DATASET_SEQUENTIAL(FUNCTION_NAMES,DS,I,true) instructs parfor_dataset_sequential that
+% DS = PARFOR_DS_SEQUENTIAL(FUNCTION_NAMES,DS,I,true) instructs parfor_ds_sequential that
 % fields are immutable. If this flag is set the only fields that will change in 
 % ds are those that are either newly created or deleted outright by the
 % cumulative action of the functions in the list. 
@@ -33,14 +33,15 @@ if ~isa(function_names,'cell'),
     function_names = {function_names}; 
 end
 
-n = size(ds,1);
+n = dsSize(ds,1);
 assert(length(I)==n,'Expecting I to be a vector assigning an integer to each row');
 assert(matlabpool('size')>0,'Expecting a pool of workers - use matlabpool to create one');
-dsIn = cell(nGroups,1);
 dsOut = cell(nGroups,1);
+dsIn = cell(nGroups,1);
 for i=1:nGroups,
-    dsIn{i} = ds(I==i,:);
+    dsIn{i} = dsSelectRows(ds,I==i);
 end
+
 nFunc = length(function_names);
 parfor i = 1:nGroups
     ds_ = dsIn{i};
@@ -50,11 +51,11 @@ parfor i = 1:nGroups
     dsOut{i} = ds_;
 end
 
-newFields = setdiff(dsOut{1}.Properties.VarNames,dsIn{1}.Properties.VarNames);
+newFields = setdiff(dsNames(dsOut{1}),dsNames(dsIn{1}));
 if immutable,
     potentiallyChangedFields = newFields;
 else
-    potentiallyChangedFields = dsOut{1}.Properties.VarNames; % all of them
+    potentiallyChangedFields = dsNames(dsOut{1}); % all of them
 end
 
 nPotentiallyChanged = length(potentiallyChangedFields);
@@ -67,7 +68,7 @@ for k=1:nPotentiallyChanged,
     ds.(fn) = x;
 end
 
-removedFields = setdiff(dsIn{1}.Properties.VarNames,dsOut{1}.Properties.VarNames);
+removedFields = setdiff(dsNames(dsIn{1}),dsNames(dsOut{1}));
 nRemoved = length(removedFields);
 for k=1:nRemoved,
    fn = removedFields{k};
