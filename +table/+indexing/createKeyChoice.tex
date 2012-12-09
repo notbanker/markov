@@ -1,0 +1,105 @@
+\documentclass[11pt]{article} 
+
+\usepackage{graphicx} 
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{rotating}
+\usepackage{amscd}
+
+\begin{document}
+
+\abstract{We explain $table.indexing.createKeyChoice$}
+
+\title{createKeyChoice}
+
+\section{$table.indexing.createKeyChoice$}
+
+Okay what's going on here is the following. We take a function handle $f$ and $m$ samples of variables $X_1,...,X_n$ with $m$ rows, $J$ of which are unique.\footnote{These might have been recently stripped from a dataset, database table et cetera. It goes without saying that the unique function must apply to each column $X_i$.}The objective is to compute a unique key for each record in such a way that it also keys into every possible unique value of the vector $f(X)$. We assume only that $f$ applied to a ``row'' of $X$ is also a row vector of the same length and it's $i$'th coordinate is of the same type as $X_i$ - it suffices that the matlab function $unique$ can be applied to the concatenation of $X_i$ and $f(X)_i$. We also want to create a $keyChoice$ mapping that will be described below. 
+\subsection{Algorithm}
+\begin{enumerate}
+\item
+Using the unique function we create a unique key for each row that can be thought of as an assignment of an integer to the $n$'th row, or equivalently a mapping $n \mapsto K(n) \in ran(K) = \{1,...,J\}$. The function $U=[U_1,...,U_n]$ maps an integer in the range of $K$ into an $n$-tuple of natural numbers whose $i$'th coordinate lies between $1$ and $s_i$ inclusive. Here $s_i$ is the number of unique values taken by $X_j$.  Finally, for each coordinate $i$ we also have another map $R_i$ whose domain is the range of $U_i$ and whose range comprises the set $\Omega_i$ of unique values taken by $X_i$.  We note that each column of the sample is reproduced by
+$$
+    X_i  \equiv  R_i \circ U_i \circ K
+$$
+where both sides act on $\{1,..,m\}$. These maps all take natural number arguments so they are represented in the code as matrices and/or cell arrays. When applying the maps to all coordinates simultaneously we drop the subscripts on $U$ and $R$, and with this understanding 
+$$
+ X \equiv R \circ U \circ K
+$$ 
+We also define $$
+O : ran(K)=\{1,...,J\} \rightarrow \{1..m\}$$
+ to be the function returning the first occurance of each unique value in $X$. This is the left inverse of $K$ (by definition, $K \circ O (n) = n$  holds for all for all $n \in ran(K)$) and so we have a unique listing of rows of $X$ given formally by 
+$$ 
+  X^{unique} = R \circ U \circ K \circ O ( \{1,...,J\}) = R \circ U ( \{1,...,J\})
+$$
+\item
+We modify the unique keys used to represent $X$ by re-indexing in such a way that elements of $f(X)$ are brought under the same representation - without recourse to a second sort. That is to say, we create a new representation
+$$
+      X \equiv  \tilde{R} \circ \tilde{U} \circ \tilde{K}  \ \  \left ( \equiv R \circ U \circ K \right)
+$$
+agreeing with the old one on its domain but extending $R_i \circ U_i$'s so that their ranges include everything in $f(X^{unique})_i$ - not just $X_i$. This is the confusing part and it is detailed below. 
+\end{enumerate}
+\subsection{Modifying the unique keys representation of $X$}
+The {\em createKey} method takes $X_1,...,X_n$ and, in effect, returns mappings $K$, $R$ and $U$ and $O$. Now suppose we apply this method to the concatenation of $X^{unique}$ and $f(X^{unique})$ to create an indexing of only those elements, viz:
+$$
+         Z := \left( \left[ \begin{array}{c}  X^{unique}   \\  \hline f(X^{unique}) \end{array} \right] \right)  {\rightarrow}  \left\{   \ \hat{R},\   \hat{U},  \hat{K}, \hat{O} \right\}
+$$
+where it is understood that $f$ acts row-wise. By definition of the unique function we have $Z(j,:) = Z^{unique}\left( \hat{K}(j) ,:  \right)$ in matlab notation, or in ours:
+$$
+    Z(j) = \hat{R} \circ \hat{U} \circ \hat{K}  (j)
+$$
+for all $j$ less than or equal to $2J$ the number of rows in $Z$. The composite function $\hat{R} \circ \hat{U} \circ \hat{K} $ takes $\{1,..,2J\}$ onto the rows of $Z$ and in particular, $\{1,..,J\}$ onto $X^{unique}$. When we compare this to our original representation of $X^{unique}$, namely $X^{unique} \equiv R \circ U ( \{1,...,J\})$, it follows that: 
+$$
+    \hat{R} \circ \hat{U} \circ \hat{K}  \equiv R \circ U
+$$
+on the set $\{1..J\}$ and therefore, motivated by the original representation for $X \left ( \equiv R \circ U \circ K \right)$ we define
+\begin{eqnarray*}
+    \tilde{R} & = & \hat{R},\\
+    \tilde{U} & = &  \hat{U}, \\
+    \tilde{K} & = &  \hat{K} \circ K
+\end{eqnarray*}
+and claim 
+$$
+   X = \tilde{R} \circ     \tilde{U} \circ   \tilde{K}
+$$
+Evidently $K$ is surjective (by definition) and there is nothing else to check. Put another way, we can replace the keys $K$ with $\tilde{K}$ with the understanding that the lookup tables $\tilde{U}$ and $\tilde{R}$ are also modified. 
+
+\subsection{Inferring the  $keyChoice$}
+
+The keys into unique rows of $\tilde{U}$ can be though of as equivalence classes (``Rainy saturdays'', for example). If we want to report the previous value in this category (or lagged by any amount), we don't need a {\em keyChoice}. However, if we wish to report the previous value last time there was a wet saturday, every time there is a dry wednesday, we need to specify this somehow. One way to do so is by writing a function that takes a row of X (the ''present record'') and returns another row $f(X)$ indicating the equivalence class whose lagged value we seek.
+\footnote{Ordinarily such functions should respect the equivalence classes (so if $x_1$ and $x_2$ are both rows of $X$ with the same unique keys, $f(x_1)$ and $f(x_2)$ should, if one of them lies in the image $f(X)$, also have the same keys). Here that is automatic because we use {\em all} columns of $X$ to determine the equivalence classes. Only the ones we care about are passed in and we assume that prior work has been done to convert numerical into categorical data.}  
+ 
+
+This is the user supplied choice function, and we return an implied mapping $\phi^f$ that has been pushed down to the level of the new keys $\tilde{K}$. This ``key choice'' function $\phi^f$ embodies the mapping $f$ in a rather more efficient manner and to be more precise, a mapping from keys onto keys such that the diagram below commutes. 
+$$
+\begin{CD}
+    \{1,..,J\}  @>{F: n \mapsto n+J}>>  F (\{J+1,...,J+n\} \\
+@V{\hat{K}}VV                     @VV{\hat{K}}V\\
+     \hat{K}(\{1,..,J\})    @>\phi^f>>   \hat{K}(\{J+1,..,J+n\})
+\end{CD}
+$$  
+where $F(n) := n + J$ is defined on $\{1,..,J\}$ only. On $\{1,..,J\}$ we note that $\hat{K}$ is an injection with inverse $\hat{K}^{-1}_{|_\{1,..,J\}}$ defined on its image $\hat{K}(\{1,..,J\})$. We therefore let
+$$
+     \phi^f =     \hat{K}  \circ F \circ \hat{K}^{-1}_{|_\{1,..,J\}}
+$$
+The point is that the translation $F$ effects the mapping $f$ (by construction of $Z$) or more formally: 
+$$
+   \tilde{R} \circ     \tilde{U} \circ   \hat{K} \circ F \equiv f \circ  \tilde{R} \circ     \tilde{U} \circ   \hat{K}
+$$
+for all $n \in \{1..J\}$ because both represent $f(X^{unique})$. In other words the outer rectangle commutes:
+$$
+\begin{CD}
+  \{1,...,J\}    @>\tilde{F}>>        \{J+1,...,2J\} \\
+@V{\hat{K}}VV                     @VV{\hat{K}}V\\
+   \hat{K}(\{1,..,J\}  @>\phi^f>> \hat{K}(\{J+1,2J\}) \\
+@V{\tilde{R} \circ \tilde{U}}VV                     @VV{\tilde{R}\circ\tilde{U}} V\\
+     X                 @>f>>    f(X)
+\end{CD}
+$$  
+To summarize, the upper rectangle commutes by virtual of our construction of $\phi^f$ and the outer rectangle commutes by virtual of the definition of $Z$. It follows that the lower rectangle must also commute (think about it) which is why we can think of $\phi^f$ as a lifting of the user supplied choice function $f$. 
+
+
+\end{document}
+
+
+
