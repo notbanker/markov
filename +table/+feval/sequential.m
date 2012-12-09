@@ -41,7 +41,7 @@ assert(matlabpool('size')>0,'Expecting a pool of workers - use matlabpool to cre
 dsOut = cell(nGroups,1);
 dsIn = cell(nGroups,1);
 for i=1:nGroups,
-    dsIn{i} = table.selectRows(ds,I==i);
+    dsIn{i} = table.select.rows(ds,I==i);
 end
 
 nFunc = length(function_names);
@@ -74,7 +74,7 @@ removedFields = setdiff(table.fieldnames(dsIn{1}),table.fieldnames(dsOut{1}));
 nRemoved = length(removedFields);
 for k=1:nRemoved,
    fn = removedFields{k};
-   ds.(fn) = [];
+   table.rmfield(ds,'fn');
 end
 
 end

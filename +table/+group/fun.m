@@ -1,7 +1,7 @@
-function fX = groupFun(X,f,varargin)
+function fX = fun(X,f,varargin)
 % Apply function to all subgroups as defined by varargin
 % The function f should take vectors to scalars or vectors to a vector of the same length
-keys_ = table.createKey(varargin{:});
+keys_ = table.indexing.createKey(varargin{:});
 [uKeys,~,keys] = unique(keys_);
 fX = nan(size(X));
 for k=1:length(uKeys),

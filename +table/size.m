@@ -22,4 +22,8 @@ if nargin>1,
    end
 end
 
+if nargout<2 && nargin==1
+   rows = [rows, cols]; 
+end
+
 end

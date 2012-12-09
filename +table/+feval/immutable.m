@@ -28,9 +28,9 @@ if ischar(function_names),
 end
 
 % Use a small sample to determine topological ordering and minimal input arguments
-dsTest = table.selectRows(ds,I==1);
+dsTest = table.select.rows(ds,I==1);
 if table.size(dsTest,1)>50,
-   dsTest = table.selectRows(dsTest,1:50); 
+   dsTest = table.select.rows(dsTest,1:50); 
 end
 [G,dsMin] = table.feval.dependencyDag(function_names,dsTest);
 seq = toposort(G');
