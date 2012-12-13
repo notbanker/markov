@@ -74,7 +74,7 @@ removedFields = setdiff(table.fieldnames(dsIn{1}),table.fieldnames(dsOut{1}));
 nRemoved = length(removedFields);
 for k=1:nRemoved,
    fn = removedFields{k};
-   table.rmfield(ds,'fn');
+   table.rmfield(ds,fn);
 end
 
 end

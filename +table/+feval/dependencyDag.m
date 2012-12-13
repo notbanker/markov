@@ -40,8 +40,8 @@ end
 function [inFields,outFields,removedFields] = determineInOutRemoved(f,ds)
   missing = firstMissingVar(f,ds);
   while ~isempty(missing),
-      disp(['Inspecting ',f,'. Adding the field ',missing,' filled with 666666 so topology can be determined']);
-      ds.(missing) = 6666666*ones(size(ds,1),1);
+      disp(['While inspecting ',f,' added the field ',missing,' filled with 666666 so topology can be determined']);
+      ds.(missing) = 666666*ones(table.size(ds,1),1);
       missing = firstMissingVar(f,ds);
   end
   dsMinimal = removeUnusedInputFields(f,ds);
@@ -57,12 +57,11 @@ dsMinimal = ds;
 allArgs = table.fieldnames(ds);
 nArgs = length(allArgs);
 for m=1:nArgs,
-    ds_without_fn = ds;
     fn = allArgs{m};
-    ds_without_fn.(fn)=[];
+    ds_without_fn = table.rmfield(ds,fn);
     try
         throw_me_away = feval(f,ds_without_fn);
-        dsMinimal.(fn) = [];
+        dsMinimal = table.rmfield(dsMinimal,fn);
     catch ME
         % Leave the field in
     end
@@ -72,6 +71,8 @@ end
 
 function fn = firstMissingVar(f,ds)
 % Find the first missing variable name that is required to apply f to ds
+% FIXME: Very brittle. Assumes that all operators fail only because they
+% call a missing field. 
  fn = '';
  try
     feval(f,ds);
@@ -83,7 +84,12 @@ function fn = firstMissingVar(f,ds)
         pat = 'Reference to non-existent field ''([\w\d]+)';
     end
     [~,~,~,~,token] = regexp(msg, pat);
-    fn = token{1}{1};
+    if isempty(token),
+        warning(['firstMissingVar failed because operator ',f,' returned an error other than a missing field: ',msg]);
+        error('Not sure what to do');
+    else
+        fn = token{1}{1};
+    end
  end
      
 

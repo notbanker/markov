@@ -5,8 +5,13 @@ if isa(ds,'dataset'),
     [rows,cols] = size(ds);
 elseif isa(ds,'struct'),
     vn = fieldnames(ds);
-    rows = size(ds.(vn{1}),1);
-    cols = length(vn);
+    if isempty(vn),
+        rows = 0;
+        cols = 0;
+    else
+        rows = size(ds.(vn{1}),1);
+        cols = length(vn);
+    end
 else
     error('Expecting struct or dataset');
 end

@@ -29,8 +29,8 @@ end
 
 % Use a small sample to determine topological ordering and minimal input arguments
 dsTest = table.select.rows(ds,I==1);
-if table.size(dsTest,1)>50,
-   dsTest = table.select.rows(dsTest,1:50); 
+if table.size(dsTest,1)>5,
+   dsTest = table.select.rows(dsTest,1:5); 
 end
 [G,dsMin] = table.feval.dependencyDag(function_names,dsTest);
 seq = toposort(G');
@@ -40,7 +40,7 @@ fns = table.fieldnames(ds);
 fns_ = table.fieldnames(dsMin);
 for k=1:length(fns),
    if ~ismember(fns{k},fns_),
-      ds.(fns{k}) = []; 
+      ds = table.rmfield(ds,fns{k}); 
    end
 end
 
