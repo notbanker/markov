@@ -1,4 +1,4 @@
-function [dsOut,ds] = immutable(function_names,ds,I)
+function [dsOut,ds,info] = immutable(function_names,ds,I)
 % DSOUT = TABLE.FEVAL.IMMUTABLE(FUNCTION_NAMES,DS,I) takes a list of
 % functions (or operators) that modify datasets or structs but treat fields as immutable
 % in the sense that they do not modify existing fields entries but may delete
@@ -33,7 +33,10 @@ if table.size(dsTest,1)>5,
    dsTest = table.select.rows(dsTest,1:5); 
 end
 [G,dsMin] = table.feval.dependencyDag(function_names,dsTest);
-seq = toposort(G');
+info.seq = toposort(G');
+info.orderedFunctions = function_names(info.seq)';
+info.minimalFields = table.fieldnames(dsMin);
+
 
 % Create a smaller dataset or struct to send to workers
 fns = table.fieldnames(ds);
@@ -54,8 +57,9 @@ end
 
 % Apply parfor_ds_sequential in sensible order with reduced overhead
 isImmutable = true;
-dsOut = table.feval.sequential(function_names(seq),ds,I,isImmutable);
-
+tic,
+dsOut = table.feval.sequential(function_names(info.seq),ds,I,isImmutable);
+info.cpu = toc;
 end
 
 

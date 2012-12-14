@@ -12,18 +12,36 @@ function [G,dsMin,In,New,Removed] = dependencyDag(function_names,ds)
 % Though all functions modify datasets it is presumed that they treat
 % fields as immutable. Thus their action is the addition of new fields. 
 
+%% Determine signatures
 nFunc = length(function_names);
+n = table.size(ds,1);
 In = cell(nFunc,1);
 New = cell(nFunc,1);
 Removed = cell(nFunc,1);
-dsMin = ds;
 for k=1:nFunc,
     fn = function_names{k};
     [In{k},New{k},Removed{k}] = determineInOutRemoved(fn,ds);
+end
+
+%% Determine minimal table to pass
+dsMin = struct;
+for k=1:nFunc
+    for m=1:length(In{k}),
+       fn = In{k}{m};
+       if ~table.isfield(dsMin,fn),
+           if table.isfield(ds,fn),
+               dsMin.(fn) = ds.(fn);
+           else
+               dsMin.(fn) = 666666*ones(n,1);
+           end
+       end
+    end
+end
+for k=1:nFunc,
     for m=1:length(New{k}),
-        vn = New{k}{m};
-        if ismember(vn,table.fieldnames(dsMin)),
-            dsMin.(New{k}{m}) = [];
+        fn = New{k}{m};
+        if table.isfield(dsMin,fn),
+            dsMin = table.rmfield(dsMin,New{k}{m});
         end
     end
 end
@@ -40,7 +58,7 @@ end
 function [inFields,outFields,removedFields] = determineInOutRemoved(f,ds)
   missing = firstMissingVar(f,ds);
   while ~isempty(missing),
-      disp(['While inspecting ',f,' added the field ',missing,' filled with 666666 so topology can be determined']);
+      %disp(['While inspecting ',f,' added the field ',missing,' filled with 666666 so topology can be determined']);
       ds.(missing) = 666666*ones(table.size(ds,1),1);
       missing = firstMissingVar(f,ds);
   end
