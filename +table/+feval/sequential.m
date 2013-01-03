@@ -53,6 +53,7 @@ parfor i = 1:nGroups
     dsOut{i} = ds_;
 end
 
+disp('Reconstituting results');
 newFields = setdiff(table.fieldnames(dsOut{1}),table.fieldnames(dsIn{1}));
 if immutable,
     potentiallyChangedFields = newFields;
