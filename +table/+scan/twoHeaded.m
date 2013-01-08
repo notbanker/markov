@@ -1,6 +1,6 @@
-function ds = doubleHeader(filename,varargin)
-% DS = TABLE.SCAN.DOUBLEHEADER(FILENAME) reads a dataset from a delimited
-% file (possibly very large) with two header lines
+function ds = twoHeaded(filename,delimiter,convertToDatenum,~)
+% DS = TABLE.SCAN.TWOHEADED(FILENAME) reads from a delimited file
+% with two header lines. 
 %
 % The first header line specifies variable names. 
 % The second header line specifies data types
@@ -15,52 +15,6 @@ function ds = doubleHeader(filename,varargin)
 % If a column is of type datetime then the first data entry, on the 3rd
 % line of the file, is used to infer the date format used. 
 
-if isempty(strfind(filename,filesep)),
-   filename = which(filename);
-end
-
-%maxlines
-if nargin<4
-   varargin{3} = 1000000; 
-end
-
-% default is to convert dates to matlab datenum
-if nargin<3,
-   varargin{2} = true; 
-end
-
-% default delimiter is .csv
-if nargin<2,
-    varargin{1} = ',';
-end
-
-nLines = countLinesInALargeFileEfficiently(filename);
-if (nLines<varargin{3}+500)
-   % If the file is small enough then read it in directly
-   ds = twoscan1(filename,varargin{:});
-else
-   % A bit clunky: break into two problems and use the file system for tail recursion
-   tmpHeader = [filename,'-tmp-header'];
-   start  = [filename,'1'];
-   tmpRest   = [filename,'-tmp-rest'];
-   start = [filename,'1'];
-   rest = [filename,'2'];
-   system(['head -n 3 ',filename,' > ',tmpHeader]);
-   system(['head -n ',num2str(varargin{3}),' ',filename,' > ',start]);
-   system(['tail -n +',num2str(varargin{3}+1),' ',filename,' > ',tmpRest]);
-   system(['cat ',tmpHeader,' ',tmpRest,' > ',rest]);
-   system(['rm ',tmpHeader]);
-   system(['rm ',tmpRest]);
-   dsRest = twoscan(rest,varargin{:});
-   dsStart = twoscan1(start,varargin{:});
-   system(['rm ',rest]);
-   system(['rm ',start]);
-   ds = [dsStart;dsRest];
-end
-
-end
-
-function ds = twoscan1(filename,delimiter,convertToDatenum,dummy)
 
 % textscan formats
 formats.default = '%s';
@@ -173,7 +127,7 @@ end
 end
 
 function [format] = getDateFormat(date_string)
-% Ripped from datevec and modified to include our formats
+% A somewhat ugly hack of datestr to get the date format implied
 
 formats = {'yyyy-mm-dd HH:MM:SS',...
     'yyyy-mm-dd',...
@@ -204,18 +158,4 @@ while i<nFormats && ~foundIt,
     end
 end
 
-end
-
-function n = countLinesInALargeFileEfficienty(filename)
-fh = fopen(filename, 'r');
-chunksize = 1e6; % read chuncks of 1MB at a time
-n = 0;
-while ~feof(fh)
-    ch = fread(fh, chunksize, '*uchar');
-    if isempty(ch)
-        break
-    end
-    n = n + sum(ch == sprintf('\n'));
-end
-fclose(fh);
 end
