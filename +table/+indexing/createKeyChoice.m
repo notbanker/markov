@@ -8,7 +8,7 @@ function [tildeK,tildeU,tildeR,phiF] = createKeyChoice(f,varargin)
 % For a more detailed explanation see the docs
 %
 % tildeK      - Unique key for rows of X
-% tildeU(i,:) - The i'th unique row-combinations of column primary keys
+% tildeU(i,:) - The i'th unique row-combination of column primary keys
 % tildeR{i}   - Mapping from columwise primary keys into unique representatives of X(:,i) and f(X)(:,i)
 % phiF(k)     - The key of f(X(i,:)) when X(i,:) has key k
 
