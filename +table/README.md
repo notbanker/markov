@@ -1,15 +1,13 @@
 # Table Toolbox
 
-Tabular struct
-: A "tabular struct" is a matlab struct where every field has the same number of rows
+**Definition** A *tabular struct* is a matlab struct where every field has the same number of rows
 
-Table
-: A "table" is either
+**Definition** A *table* is either
+
 1. a matlab dataset, or
 2. a tabular struct
 
-Table field
-: A "table field" or simply "field" refers to a field in a table, whether or not
+**Definition** A *table field* or simply *field* refers to a field in a table, whether or not 
 it takes the form of a dataset or a struct. 
 
 The Table Toolbox provides functionality that is agnostic to choice of 1 or 2. Both forms
@@ -25,16 +23,13 @@ subreferencing a field and so forth).
 The Table Toolbox explores a paradigm for organizing multiple calculations involving potentially 
 large tables, and exploiting the parallel toolbox in a moderately efficient way. To this end:
 
-Table operator
-: A "table operator", or simply "operator" is a function that modifies a table
+**Definition** A *table operator*, or simply *operator* is a function that modifies a table
 without altering the number of rows. 
 
-Field immutability respecting operator
-: A "field immutability respecting operator" or simply "immutable operator" is an operator
+**Definition** A *field immutability respecting operator* or simply *immutable operator* is an operator
 that does not alter entries in existing fields, unless it deletes the entire field outright. 
 
-Partition respecting operator
-: A "partition respecting operator" is one that permits simple parallelization on groups
+**Definition** A *partition respecting operator* is one that permits simple parallelization on groups
 of rows. That is, the computations for one group of rows do not require information about another
 groups of rows, nor modify them. 
 
@@ -45,8 +40,3 @@ field immutability and the partition can be passed to `TABLE.FEVAL.IMMUTABLE`, w
 user is aware of the order in which the operators can or should be applied (since input, new and
 removed fields can be inferred by `TABLE.FEVAL.DEPENDENCYDAG`, so can a suitable topological ordering).
 This may be used to minimise communication overhead in the parfor call. 
-
-
-
-
-
