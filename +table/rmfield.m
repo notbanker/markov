@@ -4,7 +4,7 @@ function ds = rmfield(ds,field)
 if isa(ds,'struct'),
     ds = rmfield(ds,field);
 elseif isa(ds,'dataset'),
-    if ischar(field) && ismember(field,ds.Properties,VarNames),
+    if ischar(field) && ismember(field,ds.Properties.VarNames),
         ds.(field) = [];
     elseif iscell(field),
         isValid = ismember(field,ds.Properties.VarNames);

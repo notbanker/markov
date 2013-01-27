@@ -9,12 +9,12 @@ ds.year_of_birth = ceil(1950+25*rand(n,1));
 ds.year = 2012*ones(n,1);
 
 % Supply all the fields needed
-F = {'testFunc_determine_age','testFunc_hide_year_of_birth','testFunc_add_pimples'};
+F = {'table.unitTests.determine_age','table.unitTests.hide_year_of_birth','table.unitTests.add_pimples'};
 I = table.feval.equalPartition(5,ds.year_of_birth);
 [dsOut,dsIn] = table.feval.immutable(F,ds,I);
 
 % Supply less than what is needed
-ds.age = [];
+ds = table.rmfield(ds,'age');
 [dsOut,dsIn] = table.feval.immutable(F,ds,I);
 
 

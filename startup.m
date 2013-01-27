@@ -1,2 +1,2 @@
- addpath([markov]);
- addpath([markov,filesep,'bmrkAccuracyReports']);
+ addpath(markov);
+ addpath([markov,filesep,'bmrkAccuracy']);
