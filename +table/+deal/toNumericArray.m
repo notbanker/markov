@@ -1,17 +1,17 @@
-function X = toNumericArray(ds,varargin)
+function X = toNumericArray(ds,fieldsToInclude)
 % Deal out tabular struct or dataset fields into array
 fns = table.fieldnames(ds);
-[~,obsLoc] = ismember(varargin(:),fns);
+[~,obsLoc] = ismember(fieldsToInclude,fns);
 if all(obsLoc>0),
-    n = length(varargin);
-    X = zeros(size(ds,1),n);
+    nInclude = length(fieldsToInclude);
+    X = zeros(table.size(ds,1),nInclude);
     fat = false;
-    for k=1:n,
+    for k=1:nInclude,
         x_ = ds.(fns{obsLoc(k)});
         if isnumeric(x_),
             if size(x_,2)>1,
                 fat = true;
-                X = X(:,1:n-1);
+                X = X(:,1:nInclude-1);
             end
             if fat,
                 X = [X,x_];
@@ -19,7 +19,7 @@ if all(obsLoc>0),
                 X(:,k) = x_;
             end
         else
-            warning(['table.deal2array is ignoring non-numeric field ',fns{obsLoc(k)}]);
+            warning(['table.deal.toNumericArray is ignoring non-numeric field ',fns{obsLoc(k)}]);
         end
     end
 else
