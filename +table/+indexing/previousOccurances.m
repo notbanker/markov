@@ -78,7 +78,7 @@ if nargin>=3,
         prevI(key(k),1) = k;
     end
 else
-    warning('Using a slower loop. It is strongly recommended that the third parameter J be supplied.');
+    warning('Using a slower loop. It is strongly recommended that the third parameter nUniqueKeys be supplied.');
     % Loop is repeated here because it might be slower
     for k=1:a,
         if key(k)>size(prevI,1),
