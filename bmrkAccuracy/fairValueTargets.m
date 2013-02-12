@@ -32,8 +32,8 @@ trades.fairer_value_price = consistentFvpNumer./consistentFvpDenom;
 trades.fairer_value_price(count<3) = nan;
 
 
-trades.fair_value_yield = approxYield(trades,'fair_value_price');
-trades.fairer_value_yield = approxYield(trades,'fairer_value_price');
+% trades.fair_value_yield = approxYield(trades,'fair_value_price');
+% trades.fairer_value_yield = approxYield(trades,'fairer_value_price');
 
 
 
