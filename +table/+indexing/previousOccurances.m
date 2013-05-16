@@ -47,7 +47,7 @@ if nargin>=3 && length(keyMax)>1,
     keyMax = size(keyMax,1);
 end
 if nargin<3,
-    keyMax = length(unique(key(1:min(500,a))))+10; % Reason apparent in loop below
+    keyMax = max(key); % Reason apparent in loop below
 end
 
 if nargin<4,

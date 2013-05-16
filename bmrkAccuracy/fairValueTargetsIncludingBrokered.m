@@ -1,14 +1,14 @@
-function trades = fairValueTargets(trades)
-% function trades = fairValueTargets(trades)
+function trades = fairValueTargetsIncludingBrokered(trades)
+% function trades = fairValueTargetsIncludingBrokered(trades)
 
 nLeads = min(25,trades.nLeads(1));
-nonPairedInterdealer = @(id_,isP_,rps_) deal (id_,false,4);
-p = table.leading.valuesOfAnother(trades.trade_price,1:nLeads,nonPairedInterdealer,...
-                                  trades.benchmark_id,trades.isPaired,trades.reporting_party_side);
-s = table.leading.valuesOfAnother(trades.trade_size,1:nLeads,nonPairedInterdealer,...
-                                  trades.benchmark_id,trades.isPaired,trades.reporting_party_side);                        
-t = table.leading.valuesOfAnother(trades.received_time,1:nLeads,nonPairedInterdealer,...
-                                  trades.benchmark_id,trades.isPaired,trades.reporting_party_side);                        
+interdealer = @(id_,rps_) deal (id_,4);
+p = table.leading.valuesOfAnother(trades.trade_price,1:nLeads,interdealer,...
+                                  trades.benchmark_id,trades.reporting_party_side);
+s = table.leading.valuesOfAnother(trades.trade_size,1:nLeads,interdealer,...
+                                  trades.benchmark_id,trades.reporting_party_side);                        
+t = table.leading.valuesOfAnother(trades.received_time,1:nLeads,interdealer,...
+                                  trades.benchmark_id,trades.reporting_party_side);                        
 tRelative = t-repmat(trades.received_time,1,nLeads);
 
 %% Simple fair value price
